@@ -1,0 +1,219 @@
+#!/bin/bash
+# Empact Partners — Claude Code Setup
+# One-command onboarding script. Idempotent — safe to re-run.
+#
+# Usage:
+#   bash <(curl -s https://raw.githubusercontent.com/empact-partners/empact-starter-pack/main/install.sh)
+
+set -e
+
+# Colors
+BLUE='\033[0;34m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+log() { echo -e "${BLUE}==>${NC} $1"; }
+ok() { echo -e "${GREEN}✓${NC} $1"; }
+warn() { echo -e "${YELLOW}⚠${NC} $1"; }
+err() { echo -e "${RED}✗${NC} $1" >&2; }
+
+# ─── Step 1: Preflight ────────────────────────────────────────────────
+log "Preflight checks"
+
+if ! command -v claude &> /dev/null; then
+  err "Claude Code CLI not installed. Install it first:"
+  echo "    https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview"
+  exit 1
+fi
+ok "Claude Code CLI found"
+
+if ! command -v gh &> /dev/null; then
+  err "GitHub CLI not installed. Install via: brew install gh"
+  exit 1
+fi
+ok "GitHub CLI found"
+
+if ! gh auth status &> /dev/null; then
+  warn "Not logged in to GitHub. Running: gh auth login"
+  gh auth login
+fi
+ok "GitHub authenticated"
+
+# Verify membership in empact-partners org
+if ! gh api orgs/empact-partners/members/"$(gh api user -q .login)" &> /dev/null; then
+  err "You are not a member of the empact-partners GitHub org. Ask Vlad to add you first."
+  exit 1
+fi
+ok "Member of empact-partners org"
+
+# ─── Step 2: Gather identity ──────────────────────────────────────────
+log "Configuring identity"
+
+if [ -z "$(git config --global user.name)" ]; then
+  read -p "Your full name: " GIT_NAME
+  git config --global user.name "$GIT_NAME"
+fi
+
+if [ -z "$(git config --global user.email)" ]; then
+  read -p "Your @empact.partners email: " GIT_EMAIL
+  git config --global user.email "$GIT_EMAIL"
+fi
+ok "Git identity: $(git config --global user.name) <$(git config --global user.email)>"
+
+# ─── Step 3: Clone empact-team ────────────────────────────────────────
+log "Cloning empact-team repo"
+
+mkdir -p ~/Projects
+if [ -d ~/Projects/empact-team/.git ]; then
+  (cd ~/Projects/empact-team && git pull --ff-only origin main)
+  ok "empact-team: already cloned, pulled latest"
+else
+  gh repo clone empact-partners/empact-team ~/Projects/empact-team
+  ok "empact-team: cloned"
+fi
+
+# ─── Step 4: Symlink shared skills ────────────────────────────────────
+log "Symlinking shared skills into ~/.claude/skills/"
+
+mkdir -p ~/.claude/skills
+LINKED=0
+for skill_dir in ~/Projects/empact-team/skills/*/; do
+  [ ! -d "$skill_dir" ] && continue
+  SKILL_NAME=$(basename "$skill_dir")
+  LINK=~/.claude/skills/"$SKILL_NAME"
+
+  if [ -L "$LINK" ]; then
+    # Already a symlink — ensure it points to the right place
+    TARGET=$(readlink "$LINK")
+    EXPECTED="$skill_dir"
+    [ "${TARGET%/}" = "${EXPECTED%/}" ] && continue
+    rm "$LINK"
+  elif [ -e "$LINK" ]; then
+    warn "~/.claude/skills/$SKILL_NAME exists as a real folder — skipping (rename it first if you want the team version)"
+    continue
+  fi
+  ln -s "$skill_dir" "$LINK"
+  LINKED=$((LINKED+1))
+done
+ok "$LINKED skills linked from empact-team"
+
+# ─── Step 5: Install shared hooks ─────────────────────────────────────
+log "Installing shared hooks"
+
+mkdir -p ~/.claude/hooks
+for hook in ~/Projects/empact-team/hooks/*.sh; do
+  [ ! -f "$hook" ] && continue
+  HOOK_NAME=$(basename "$hook")
+  cp "$hook" ~/.claude/hooks/"$HOOK_NAME"
+  chmod +x ~/.claude/hooks/"$HOOK_NAME"
+done
+ok "Hooks installed"
+
+# ─── Step 6: Install slash commands ───────────────────────────────────
+log "Installing slash commands"
+
+mkdir -p ~/.claude/commands
+for cmd in ~/Projects/empact-team/commands/*.md; do
+  [ ! -f "$cmd" ] && continue
+  cp "$cmd" ~/.claude/commands/"$(basename "$cmd")"
+done
+ok "Slash commands installed (/sync-team)"
+
+# ─── Step 7: Install CLAUDE.md template ───────────────────────────────
+log "CLAUDE.md setup"
+
+if [ -f ~/.claude/CLAUDE.md ]; then
+  warn "~/.claude/CLAUDE.md already exists. Not overwriting."
+  echo "    If you want the Empact template, back up your current file and copy:"
+  echo "    cp ~/Projects/empact-starter-pack/CLAUDE.md.template ~/.claude/CLAUDE.md"
+else
+  cp ~/Projects/empact-starter-pack/CLAUDE.md.template ~/.claude/CLAUDE.md
+  ok "CLAUDE.md installed from template — fill in your {YOUR_NAME}, {YOUR_ROLE}, etc. before first use"
+fi
+
+# ─── Step 8: MCP config ───────────────────────────────────────────────
+log "MCP config"
+
+if [ -f ~/.claude/mcp-servers.json ]; then
+  warn "~/.claude/mcp-servers.json already exists. Not overwriting."
+else
+  cp ~/Projects/empact-starter-pack/mcp-servers.template.json ~/.claude/mcp-servers.json
+  ok "mcp-servers.json template installed"
+  echo "    ⚠️  You must fill in credentials before MCPs will work."
+  echo "    Ask Vlad on Slack for: NOTION_EMPACT_TOKEN, FIRECRAWL_API_KEY, SLACK_EMPACT_BOT_TOKEN"
+fi
+
+# ─── Step 9: Backup routes for smart-backup.sh ────────────────────────
+log "Configuring auto-backup routes"
+
+if [ ! -f ~/.claude/backup-routes.json ]; then
+  cat > ~/.claude/backup-routes.json <<EOF
+{
+  "_comment": "Auto-generated by empact-starter-pack install.sh. Repo-aware auto-backup. Files edited within these physical roots get committed + pushed to their owning git repo.",
+  "roots": [
+    "$HOME/.claude",
+    "$HOME/Projects/empact-team",
+    "$HOME/Projects/empact-partners-repos"
+  ]
+}
+EOF
+  ok "backup-routes.json installed"
+fi
+
+mkdir -p ~/Projects/empact-partners-repos
+ok "~/Projects/empact-partners-repos/ created (you'll clone partner repos here as needed)"
+
+# ─── Step 10: Schedule hourly team-sync ───────────────────────────────
+log "Scheduling hourly team-sync"
+
+PLIST=~/Library/LaunchAgents/com.empact.team-sync.plist
+cat > "$PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.empact.team-sync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string><string>-c</string>
+    <string>cd \$HOME/Projects/empact-team &amp;&amp; /usr/bin/git pull --ff-only origin main</string>
+  </array>
+  <key>StartInterval</key><integer>3600</integer>
+  <key>RunAtLoad</key><true/>
+  <key>StandardOutPath</key><string>\$HOME/Library/Logs/empact-team-sync.log</string>
+  <key>StandardErrorPath</key><string>\$HOME/Library/Logs/empact-team-sync.log</string>
+</dict>
+</plist>
+EOF
+
+launchctl unload "$PLIST" 2>/dev/null || true
+launchctl load "$PLIST"
+ok "Hourly team-sync scheduled"
+
+# ─── Step 11: Partner repos (optional) ────────────────────────────────
+log "Partner repos"
+
+echo ""
+echo "    Based on your role, you may need to clone partner repos. Examples:"
+echo "      gh repo clone empact-partners/partner-systemone ~/Projects/empact-partners-repos/partner-systemone"
+echo "      gh repo clone empact-partners/partner-wecantrack ~/Projects/empact-partners-repos/partner-wecantrack"
+echo ""
+echo "    Or list what's available:"
+echo "      gh repo list empact-partners --limit 50"
+echo ""
+
+# ─── Done ─────────────────────────────────────────────────────────────
+echo ""
+echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${GREEN}✓ Empact Partners Claude Code setup complete${NC}"
+echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+echo "Next steps:"
+echo "  1. Edit ~/.claude/CLAUDE.md — fill in {YOUR_NAME}, {YOUR_ROLE}, etc."
+echo "  2. Get MCP credentials from Vlad (Slack DM) and paste into ~/.claude/mcp-servers.json"
+echo "  3. Clone the partner repos you work on (see examples above)"
+echo "  4. Open Claude Code → type '/sync-team' → should show ✓ skills in sync"
+echo "  5. Test: ask Claude to 'list Empact active partners' — notion-assistant skill should fire"
+echo ""

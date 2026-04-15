@@ -1,0 +1,64 @@
+{
+  "_README": "Template MCP servers file for Empact Partners team members. Copy to ~/.claude/mcp-servers.json and fill in the credentials. Ask Vlad (vlad@empact.partners) for keys on Slack DM.",
+  "_setup_steps": [
+    "1. Copy this file to ~/.claude/mcp-servers.json",
+    "2. Request credentials from Vlad in Slack DM. Specify which MCPs you need (based on your role).",
+    "3. Replace each ${PLACEHOLDER} with the credential you receive.",
+    "4. Remove the MCPs you don't need (keeps config lean).",
+    "5. Restart Claude Code to pick up the new config."
+  ],
+  "mcpServers": {
+    "empact-notion": {
+      "_comment": "Empact Partners Notion workspace. Required for all consultants (partner docs, style guides, playbooks).",
+      "command": "npx",
+      "args": ["-y", "@notionhq/notion-mcp-server"],
+      "env": {
+        "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer ${NOTION_EMPACT_TOKEN}\", \"Notion-Version\": \"2022-06-28\"}"
+      }
+    },
+    "firecrawl": {
+      "_comment": "Web scraping for research, competitor analysis. Required for all roles that do content or audits.",
+      "command": "npx",
+      "args": ["-y", "firecrawl-mcp"],
+      "env": {
+        "FIRECRAWL_API_KEY": "${FIRECRAWL_API_KEY}"
+      }
+    },
+    "slack-empact": {
+      "_comment": "Empact Partners Slack workspace. Required for all consultants.",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-slack"],
+      "env": {
+        "SLACK_BOT_TOKEN": "${SLACK_EMPACT_BOT_TOKEN}",
+        "SLACK_TEAM_ID": "T0178B71QHW"
+      }
+    },
+    "reddit": {
+      "_comment": "Reddit API. Required for Reddit Marketing roles (Gabby, Heather, Shanal).",
+      "command": "npx",
+      "args": ["-y", "reddit-mcp-server"],
+      "env": {
+        "REDDIT_CLIENT_ID": "${REDDIT_CLIENT_ID}",
+        "REDDIT_CLIENT_SECRET": "${REDDIT_CLIENT_SECRET}",
+        "REDDIT_USERNAME": "${REDDIT_USERNAME}",
+        "REDDIT_PASSWORD": "${REDDIT_PASSWORD}"
+      }
+    },
+    "google-workspace-empact": {
+      "_comment": "Gmail, Drive, Calendar for @empact.partners email. Required for all consultants.",
+      "command": "npx",
+      "args": ["-y", "google-workspace-mcp"],
+      "env": {
+        "GOOGLE_CLIENT_ID": "${GOOGLE_CLIENT_ID}",
+        "GOOGLE_CLIENT_SECRET": "${GOOGLE_CLIENT_SECRET}",
+        "GOOGLE_REDIRECT_URI": "http://localhost:8080/oauth/callback"
+      }
+    }
+  },
+  "_optional_mcps_request_if_needed": {
+    "ahrefs": "SEO research — request if you do SEO/off-page work (Gia, Leon)",
+    "wordpress": "WordPress REST API — request if you do WeCanTrack blog audits",
+    "webflow": "Webflow CMS — request if you manage SystemOne content",
+    "typefully": "Typefully social media scheduler — request if you manage LinkedIn content"
+  }
+}

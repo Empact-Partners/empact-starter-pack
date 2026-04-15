@@ -1,0 +1,188 @@
+# Empact Partners — Claude Code Setup
+
+## Identity
+
+You are working with **{YOUR_NAME}**, a consultant at Empact Partners (B2B SaaS GTM consultancy).
+
+Fill in your identity below before starting:
+- Name: {YOUR_NAME}
+- Role: {YOUR_ROLE} (e.g. Senior GTM Consultant, Reddit Marketing Specialist, Designer)
+- Primary partners: {PARTNERS_YOU_LEAD}
+- Email: {YOUR_EMPACT_EMAIL}
+- Slack handle: {YOUR_SLACK_HANDLE}
+
+CEO and founder: Vlad Shvets (vlad@empact.partners). Based in Chile.
+
+## About Empact Partners
+
+B2B SaaS GTM consultancy. Extension of clients' marketing teams. Long-term partnerships (many 5+ years). "Planting trees" — building sustainable GTM engines. Registered as Empact Partners OU (Estonia).
+
+### Team
+Vlad Shvets (CEO), Sharne McDonald, Leon Claassen, Shanal Govender, Teddy Cipolla (Senior GTM Consultants), Gabby Kater, Heather Holland (Reddit Marketing), Margarida Lemos (Designer), Gia Radnai (Off-Page SEO Specialist).
+
+### Services
+1. **GEO** — AI search optimization. Formula: GEO = UGC + Mentions. 3-6 months for initial momentum.
+2. **Content Marketing** — No AI-generated content. Original insights, expert perspectives, product tutorials.
+3. **SEO: Search Everywhere Optimization** — Multi-platform. EAO campaigns. DR 40+ links only.
+4. **Brand Marketing** — Evaluation, messaging frameworks, website audits, conversion optimization.
+5. **RevOps** — AI-driven revenue workflows. HubSpot/Segment/Clearbit. PQL identification.
+6. **PLG** — AI agent optimization, strategic mentions, UGC orchestration.
+
+### Active Partners
+Tracked in Monday.com Empact Partners master board (boardId 1675436417). Status is determined by board GROUP — never by Health Status color column.
+
+Full partner documentation lives in Notion under Partners root (`319a8070e23880adb68ff6a948274797`). Each active partner has a detailed page with company overview, partnership history, current focus, team, open items.
+
+### Empact Brand
+- Colors: Sherpa Blue #02454F, Lucky Green #40C890, Virtual Goal #C6FF53, Sugar Grape #A155FF, Space Black #171616, Snowbelt #EEF1ED
+- Typography: Syne Medium (headings), Public Sans (body)
+- Logo: Stacked horizontal bars + "Empact Partners" wordmark
+- Photography: Always B&W high contrast. Patterns: dotted and linear modules.
+- Tone: Professional, results-oriented, partnership-focused. Uses "Empactful" (branded wordplay).
+
+---
+
+## Communication Style
+
+Ultra-direct. No filler, no pleasantries, no preambles.
+- When asked to write something, produce **final, ship-ready output** — not a draft to review.
+- Max 3 options with a clear recommendation, or just do the recommended one.
+- No emojis in responses (exception: LinkedIn content where emojis are expected).
+- Never say "I think" or hedge — be direct and confident.
+- **NEVER stop mid-task to ask permission, confirmation, or approval.** Complete all steps to completion in one go. The ONLY reasons to stop: (a) a hard error you cannot resolve, (b) a decision with multiple valid options where picking wrong would cause damage.
+- **NEVER batch content work into Python loops.** Each post/page needs its own Firecrawl scrape, analysis, and edits — visible in the conversation, not hidden in a script. Mechanical fixes (URL swaps, em dash removal) CAN be batched. Content work CANNOT.
+
+---
+
+## Tool Stack
+
+| Tool | Purpose | MCP Prefix |
+|------|---------|------------|
+| **Notion (Empact workspace)** | All partner documentation, playbooks, style guides | `mcp__empact-notion__*` |
+| **Monday.com** | Project tracking, partner boards, CRM | `mcp__claude_ai_monday_com__*` |
+| **Gmail (Empact)** | Email workflows for vlad@empact.partners | `mcp__google-workspace-empact__*` |
+| **Google Calendar** | Scheduling | `mcp__google-workspace-empact__*` |
+| **Google Drive** | Meeting transcripts, shared docs | `mcp__google-workspace-empact__*` |
+| **Slack (Empact)** | Team + partner channels | `mcp__slack-empact__*` |
+| **Firecrawl** | Web scraping, site mapping | `mcp__firecrawl__*` |
+| **Ahrefs** | SEO analysis, domain research | `mcp__claude_ai_Ahrefs__*` |
+| **Reddit** | Reddit API, post/comment workflows | `mcp__reddit__*` |
+| **GitHub CLI** | Partner repo operations | `gh` (shell) |
+
+Ask Vlad (vlad@empact.partners) for MCP credentials if not set up.
+
+---
+
+## GitHub Structure
+
+Everything lives under the `empact-partners` GitHub org (github.com/empact-partners).
+
+| Repo | Purpose |
+|------|---------|
+| `empact-team` | Shared skills, hooks, CLAUDE.md template — you already have this cloned at `~/Projects/empact-team/` |
+| `empact-starter-pack` | The onboarding repo you just installed from |
+| `partner-{slug}` × 16 | One repo per active partner (e.g. `partner-systemone`, `partner-wecantrack`) — clone on demand via `gh repo clone empact-partners/partner-{slug}` |
+| `venture-{qvery,marketsplash,mystery-demo}` | Internal ventures |
+
+**Notion = documentation.** **GitHub = files.** **Monday.com = project tracking.**
+
+Partner repos follow this standard layout:
+```
+partner-{slug}/
+├── README.md       # Links to Notion page (source of truth for docs)
+├── briefs/         # Project briefs, kickoffs, SOWs
+├── content/        # Blog drafts, copy, case studies
+├── reports/        # Generated PDFs, audits
+├── research/       # Firecrawl outputs, competitor scrapes
+├── reddit/         # Threads, MCs, subreddit lists
+├── seo/            # Link opportunities, backlink lists
+├── design/         # Figma exports, brand assets
+└── meta/           # Transcripts, analytics snapshots
+```
+
+---
+
+## Skill Sync Model
+
+Team skills live in `~/Projects/empact-team/skills/`. Your local `~/.claude/skills/` contains symlinks into that directory. You run `/sync-team` to pull the latest skills from GitHub. An hourly launchd job also pulls in the background.
+
+- Do NOT edit shared skills directly (only Vlad updates them, then pushes to GitHub).
+- To suggest a skill update, open a PR against `empact-partners/empact-team`.
+- To create your own personal skill, add it to `~/.claude/skills/{name}/SKILL.md` — it stays local unless Vlad explicitly shares it via the `share-skill` skill.
+
+---
+
+## Security Rules
+
+- Never output API keys, tokens, passwords, or credentials
+- Never read or expose `mcp-servers.json`, `.env` files, or SSH keys
+- Never commit secrets to git
+- Hooks enforce this automatically — don't try to bypass them
+
+---
+
+## Hooks (Active)
+
+| Hook | Event | Purpose |
+|------|-------|---------|
+| `freshness-check.sh` | SessionStart | Reports stale data sources + team-repo staleness |
+| `smart-backup.sh` | PostToolUse (Edit/Write) | Auto-commits + pushes file changes to the owning git repo (per backup-routes.json) |
+| `block-dangerous-commands.sh` | PreToolUse (Bash) | Blocks rm -rf, force push to main, DROP DB, credential exposure |
+| `protect-sensitive-files.sh` | PreToolUse (Edit/Write) | Blocks edits to .env, mcp-servers.json, SSH keys |
+| `mcp-assistant-inject.sh` | PreToolUse (Notion/Monday) | Auto-injects MCP assistant rules on first call per session |
+
+---
+
+## Writing Style for Content Work
+
+When creating content for Empact partners:
+
+- **No corporate jargon.** Replace: "leverage", "synergy", "solution", "platform", "tool". Use concrete verbs.
+- **No AI filler.** Banned: "actually" as filler, em dashes for drama (use only 1-2 per piece), "here's the kicker", "let that sit for a second", "plot twist".
+- **American English.** Oxford comma always.
+- **Internal links only.** No external links or external statistics without Vlad's explicit approval.
+- **Anonymize non-public-case-study partners.** Never name Alliance Risk in content. Check the partner's Notion page for "Publicly named OK: yes/no".
+- **Partner project, not engagement.** "Partnership" for relationships; "engagement" is for Reddit metrics only.
+
+---
+
+## Working Protocol
+
+1. Read the partner's Notion page BEFORE starting any work (`319a8070e23880adb68ff6a948274797`)
+2. Check the partner's Monday.com board for current status, health, open items
+3. Check `#{partner-slug}` Slack channel for recent context (past 7 days)
+4. Use `/sync-team` at start of any work session to pull latest shared skills
+5. When done, your commits auto-push to the right partner repo via smart-backup
+6. Document outcomes in Notion (not GitHub) — GitHub is for files only
+
+---
+
+## Available Skills
+
+Core team-shared skills (auto-synced from empact-partners/empact-team):
+
+| Skill | Purpose |
+|-------|---------|
+| `notion-assistant` | Operational playbook for Notion MCP |
+| `monday-assistant` | Operational playbook for Monday.com MCP |
+| `linear-assistant` | Operational playbook for Linear MCP (Qvery only) |
+| `empact-content-creation` | Empact Partners content (blog, case studies, LinkedIn) |
+| `empact-zone-content-creation` | End-to-end Empact Zone blog pipeline |
+| `empact-report-generator` | Branded Empact Partners PDF reports |
+| `empact-reddit-performance-report` | Internal Empact Reddit performance analysis |
+| `reddit-thread-search` | Empact Reddit marketing thread discovery |
+| `reddit-research-report` | Reddit Research Report for partners |
+| `wecantrack-blog-audit` | WeCanTrack blog post audits via WordPress REST |
+| `wecantrack-website-audit` | WeCanTrack website page audits |
+| `wecantrack-content-*` | WeCanTrack content creation suite |
+| `mystery-demo-*` | Mystery Demo project workflows |
+
+Run `/sync-team` to ensure you have the latest.
+
+---
+
+## Getting Help
+
+- **Vlad Shvets** — CEO. Direct message on Slack for urgent. Email vlad@empact.partners.
+- **Sharne McDonald** — Senior consultant, SystemOne lead.
+- Team Slack: `empact-partners.slack.com`.
