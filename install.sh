@@ -136,8 +136,8 @@ else
   echo "    Ask Vlad on Slack for: NOTION_EMPACT_TOKEN, FIRECRAWL_API_KEY, SLACK_EMPACT_BOT_TOKEN"
 fi
 
-# ─── Step 9: Backup routes for smart-backup.sh ────────────────────────
-log "Configuring auto-backup routes"
+# ─── Step 9: Backup routes + shared-skills registry ──────────────────
+log "Configuring auto-backup routes + skill registry"
 
 if [ ! -f ~/.claude/backup-routes.json ]; then
   cat > ~/.claude/backup-routes.json <<EOF
@@ -152,6 +152,33 @@ if [ ! -f ~/.claude/backup-routes.json ]; then
 EOF
   ok "backup-routes.json installed"
 fi
+
+# Build shared-skills.json from whatever skills exist in empact-team right now
+python3 << PYEOF
+import json, os, glob
+from datetime import date
+
+team_skills = glob.glob(os.path.expanduser("~/Projects/empact-team/skills/*/"))
+registry = {
+    "_comment": "Registry of team-shared skills. When you edit a registered skill, smart-backup.sh auto-pushes to Empact-Partners/empact-team.",
+    "team_repo_path": os.path.expanduser("~/Projects/empact-team"),
+    "team_repo_remote": "https://github.com/Empact-Partners/empact-team.git",
+    "shared": []
+}
+for skill_path in sorted(team_skills):
+    name = os.path.basename(skill_path.rstrip("/"))
+    registry["shared"].append({
+        "name": name,
+        "registered_at": date.today().isoformat(),
+        "team_repo_path": f"skills/{name}"
+    })
+
+out = os.path.expanduser("~/.claude/shared-skills.json")
+with open(out, "w") as f:
+    json.dump(registry, f, indent=2)
+print(f"  shared-skills.json: {len(registry['shared'])} skills registered")
+PYEOF
+ok "Shared-skills registry installed — edits to these skills auto-push to empact-team"
 
 mkdir -p ~/Projects/empact-partners-repos
 ok "~/Projects/empact-partners-repos/ created (you'll clone partner repos here as needed)"
