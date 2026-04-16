@@ -104,10 +104,10 @@ partner-{slug}/
 
 ## Skill Sync Model
 
-Team skills live in `~/Projects/empact-team/skills/`. Your local `~/.claude/skills/` contains symlinks into that directory. You run `/sync-team` to pull the latest skills from GitHub. An hourly launchd job also pulls in the background.
+Team skills live in `~/Projects/empact-team/skills/`. The `install.sh` script copies them into your `~/.claude/skills/` as real files. You run `/sync-team` to pull the latest versions from GitHub and refresh your local copies. An hourly launchd job also pulls in the background.
 
 - Do NOT edit shared skills directly (only Vlad updates them, then pushes to GitHub).
-- To suggest a skill update, open a PR against `empact-partners/empact-team`.
+- To suggest a skill update, open a PR against `Empact-Partners/empact-team`.
 - To create your own personal skill, add it to `~/.claude/skills/{name}/SKILL.md` — it stays local unless Vlad explicitly shares it via the `share-skill` skill.
 
 ---

@@ -74,30 +74,21 @@ else
   ok "empact-team: cloned"
 fi
 
-# ─── Step 4: Symlink shared skills ────────────────────────────────────
-log "Symlinking shared skills into ~/.claude/skills/"
+# ─── Step 4: Copy shared skills ───────────────────────────────────────
+log "Copying shared skills into ~/.claude/skills/"
 
 mkdir -p ~/.claude/skills
-LINKED=0
+COPIED=0
 for skill_dir in ~/Projects/empact-team/skills/*/; do
   [ ! -d "$skill_dir" ] && continue
   SKILL_NAME=$(basename "$skill_dir")
-  LINK=~/.claude/skills/"$SKILL_NAME"
+  DST=~/.claude/skills/"$SKILL_NAME"
 
-  if [ -L "$LINK" ]; then
-    # Already a symlink — ensure it points to the right place
-    TARGET=$(readlink "$LINK")
-    EXPECTED="$skill_dir"
-    [ "${TARGET%/}" = "${EXPECTED%/}" ] && continue
-    rm "$LINK"
-  elif [ -e "$LINK" ]; then
-    warn "~/.claude/skills/$SKILL_NAME exists as a real folder — skipping (rename it first if you want the team version)"
-    continue
-  fi
-  ln -s "$skill_dir" "$LINK"
-  LINKED=$((LINKED+1))
+  # Copy (overwrite if exists — team version is canonical for team members)
+  cp -R "$skill_dir" "$DST/"
+  COPIED=$((COPIED+1))
 done
-ok "$LINKED skills linked from empact-team"
+ok "$COPIED skills copied from empact-team (real files, no symlinks)"
 
 # ─── Step 5: Install shared hooks ─────────────────────────────────────
 log "Installing shared hooks"
